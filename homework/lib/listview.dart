@@ -11,6 +11,18 @@ class Product1 extends StatefulWidget {
 class _ProductStage extends State<Product1> {
   RangeValues _currentRangeValues = const RangeValues(0, 100);
   String _selectedLetter = 'All';
+  bool _showWrap = false;
+  int _wrapCount = 6;
+  int _nameLength = 0;
+  bool _checkNameLength = false;
+
+  void _toggleWrap() {
+    setState(() {
+      _showWrap = !_showWrap;
+      _wrapCount = _showWrap ? 27 : 6;
+    });
+  }
+
   final List<Product> products = [
     Product(
       name: 'ABC',
@@ -44,6 +56,28 @@ class _ProductStage extends State<Product1> {
     ),
   ];
 
+  void _maxLength() {
+    for (int i = 0; i < products.length; i++) {
+      if (products[i].name.length > _nameLength) {
+        setState(() {
+          _checkNameLength = true;
+          _nameLength = products[i].name.length;
+        });
+      }
+    }
+  }
+
+  void _minLength() {
+    for (int i = 0; i < products.length; i++) {
+      if (products[i].name.length < _nameLength) {
+        setState(() {
+          _checkNameLength = true;
+          _nameLength = products[i].name.length;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -74,7 +108,7 @@ class _ProductStage extends State<Product1> {
                     _currentRangeValues = values;
                   });
                 }),
-            const SizedBox(height: 20),
+            const SizedBox(height: 5),
             const Text(
               'Filter by Alphabet',
               style: TextStyle(
@@ -85,25 +119,65 @@ class _ProductStage extends State<Product1> {
             const SizedBox(height: 20),
             SizedBox(
               width: double.infinity,
-              child: Wrap(
-                spacing: 5.0,
-                children: List.generate(27, (index) {
-                  String letter =
-                      index == 0 ? 'All' : String.fromCharCode(64 + index);
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: ChoiceChip(
-                      label: Text(letter),
-                      selected: _selectedLetter == letter,
-                      onSelected: (bool selected) {
-                        setState(() {
-                          _selectedLetter = selected ? letter : 'All';
-                        });
-                      },
-                    ),
-                  );
-                }),
+              child: Column(
+                children: [
+                  Wrap(
+                    spacing: 5.0,
+                    children: List.generate(_wrapCount, (index) {
+                      String letter =
+                          index == 0 ? 'All' : String.fromCharCode(64 + index);
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: ChoiceChip(
+                          label: Text(letter),
+                          selected: _selectedLetter == letter,
+                          onSelected: (bool selected) {
+                            setState(() {
+                              _selectedLetter = selected ? letter : 'All';
+                            });
+                          },
+                        ),
+                      );
+                    }),
+                  ),
+                  TextButton(
+                    onPressed: _toggleWrap,
+                    child: Text(_showWrap ? 'Show Less' : 'Show More'),
+                  )
+                ],
               ),
+            ),
+            const SizedBox(height: 5),
+            const Text(
+              'Filter by Name Length',
+              style: TextStyle(
+                color: Colors.black,
+                fontSize: 15,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                ChoiceChip(
+                  label: const Text('Longest Name'),
+                  selected: _nameLength == 4,
+                  onSelected: (bool selected) {
+                    setState(() {
+                      _maxLength();
+                    });
+                  },
+                ),
+                ChoiceChip(
+                  label: const Text('Shortest Name'),
+                  selected: _nameLength == 3,
+                  onSelected: (bool selected) {
+                    setState(() {
+                      _minLength();
+                    });
+                  },
+                ),
+              ],
             ),
             const SizedBox(height: 20),
             Expanded(
@@ -115,14 +189,29 @@ class _ProductStage extends State<Product1> {
                       product.price <= _currentRangeValues.end &&
                       (_selectedLetter == 'All' ||
                           product.name.startsWith(_selectedLetter))) {
-                    return Card(
-                      child: ListTile(
-                        leading: Image.network(product.imageUrl),
-                        title: Text(product.name),
-                        subtitle: Text(product.details),
-                        trailing: Text('\$${product.price}'),
-                      ),
-                    );
+                    if (_checkNameLength) {
+                      if (_nameLength == product.name.length) {
+                        return Card(
+                          child: ListTile(
+                            leading: Image.network(product.imageUrl),
+                            title: Text(product.name),
+                            subtitle: Text(product.details),
+                            trailing: Text('\$${product.price}'),
+                          ),
+                        );
+                      } else {
+                        return const SizedBox.shrink();
+                      }
+                    } else {
+                      return Card(
+                        child: ListTile(
+                          leading: Image.network(product.imageUrl),
+                          title: Text(product.name),
+                          subtitle: Text(product.details),
+                          trailing: Text('\$${product.price}'),
+                        ),
+                      );
+                    }
                   } else {
                     return const SizedBox.shrink();
                   }
