@@ -12,13 +12,19 @@ class _ProductStage extends State<Product1> {
   bool isLoading = false;
   bool updateValid = false;
   int productIndex = 0;
+  bool edit = false;
   // final _formKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _imageController = TextEditingController();
   final TextEditingController _detailController = TextEditingController();
   final TextEditingController _priceController = TextEditingController();
 
-  // late String _textFormError;
+  void delay() async {
+    await Future.delayed(const Duration(seconds: 1));
+    setState(() {
+      isLoading = false;
+    });
+  }
 
   bool _validatorProperties() {
     bool check = true;
@@ -52,33 +58,52 @@ class _ProductStage extends State<Product1> {
             imageUrl: _imageController.text,
             price: double.parse(_priceController.text),
             details: _detailController.text));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Thêm sản phẩm thành công!'),
+        ));
       }
+      isLoading = true;
+      delay();
     });
   }
 
-  void _updateProduct(int index) {
+  void _editProduct(int index) {
     setState(() {
       productIndex = index;
       _nameController.text = products[index].name;
       _imageController.text = products[index].imageUrl;
       _detailController.text = products[index].details;
       _priceController.text = products[index].price.toString();
+      edit = true;
     });
   }
 
-  void _changInf() {
+  void _validChangInf() {
     setState(() {
       if (_nameController.text != products[productIndex].name ||
           _imageController.text != products[productIndex].imageUrl ||
           _detailController.text != products[productIndex].details ||
           _priceController.text != products[productIndex].price.toString()) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Cập nhật thành công!'),
-        ));
         updateValid = true;
       } else {
         updateValid = false;
       }
+    });
+  }
+
+  void _updateProduct() {
+    setState(() {
+      products[productIndex] = Product(
+          name: _nameController.text,
+          imageUrl: _imageController.text,
+          price: double.parse(_priceController.text),
+          details: _detailController.text);
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Cập nhật thành công!'),
+      ));
+      _validChangInf();
+      isLoading = true;
+      delay();
     });
   }
 
@@ -141,21 +166,27 @@ class _ProductStage extends State<Product1> {
                         decoration: const InputDecoration(
                           labelText: "Product Name",
                         ),
-                        onSaved: (String? value) {},
+                        onChanged: (String value) {
+                          _validChangInf();
+                        },
                       ),
                       TextFormField(
                         controller: _imageController,
                         decoration: const InputDecoration(
                           labelText: "Image URL",
                         ),
-                        onSaved: (String? value) {},
+                        onChanged: (String value) {
+                          _validChangInf();
+                        },
                       ),
                       TextFormField(
                         controller: _detailController,
                         decoration: const InputDecoration(
                           labelText: "Product Details",
                         ),
-                        onSaved: (String? value) {},
+                        onChanged: (String value) {
+                          _validChangInf();
+                        },
                       ),
                       TextFormField(
                         controller: _priceController,
@@ -163,7 +194,9 @@ class _ProductStage extends State<Product1> {
                         decoration: const InputDecoration(
                           labelText: "Product Price",
                         ),
-                        onSaved: (String? value) {},
+                        onChanged: (String value) {
+                          _validChangInf();
+                        },
                       ),
                     ],
                   ),
@@ -185,8 +218,9 @@ class _ProductStage extends State<Product1> {
                       : const Text('Add Product'),
                 ),
                 ElevatedButton(
-                  onPressed:
-                      isLoading ? null : (updateValid ? _changInf : null),
+                  onPressed: isLoading
+                      ? null
+                      : (updateValid && edit ? _updateProduct : null),
                   child: isLoading
                       ? const SizedBox(
                           width: 20,
@@ -217,7 +251,7 @@ class _ProductStage extends State<Product1> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           IconButton(
-                            onPressed: () => _updateProduct(index),
+                            onPressed: () => _editProduct(index),
                             icon: const Icon(Icons.edit),
                           ),
                           IconButton(
