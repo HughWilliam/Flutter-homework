@@ -50,6 +50,19 @@ class _ProductStage extends State<Product1> {
     return check;
   }
 
+  void _validChangInf() {
+    setState(() {
+      if (_nameController.text != products[productIndex].name ||
+          _imageController.text != products[productIndex].imageUrl ||
+          _detailController.text != products[productIndex].details ||
+          _priceController.text != products[productIndex].price.toString()) {
+        updateValid = true;
+      } else {
+        updateValid = false;
+      }
+    });
+  }
+
   void _addProduct() {
     setState(() {
       if (_validatorProperties()) {
@@ -75,19 +88,7 @@ class _ProductStage extends State<Product1> {
       _detailController.text = products[index].details;
       _priceController.text = products[index].price.toString();
       edit = true;
-    });
-  }
-
-  void _validChangInf() {
-    setState(() {
-      if (_nameController.text != products[productIndex].name ||
-          _imageController.text != products[productIndex].imageUrl ||
-          _detailController.text != products[productIndex].details ||
-          _priceController.text != products[productIndex].price.toString()) {
-        updateValid = true;
-      } else {
-        updateValid = false;
-      }
+      _validChangInf();
     });
   }
 
