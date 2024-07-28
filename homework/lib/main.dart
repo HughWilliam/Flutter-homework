@@ -1,4 +1,4 @@
-import 'package:homework/listview.dart';
+import 'package:homework/cat_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/material.dart';
 
@@ -15,7 +15,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(scaffoldBackgroundColor: Colors.white),
       home: const Scaffold(
         backgroundColor: Colors.white,
-        body: Product1(),
+        body: CatImagePage(),
       ),
     );
   }
