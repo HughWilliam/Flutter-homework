@@ -12,34 +12,48 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePage extends State<HomePage> {
-  bool grid_view = true;
-  bool search = false;
+  int option = 0; // 0: add, 1: edit, 2: save edit (notePage)
+  bool gridView = true; // switch view (grid or list)
+  bool search = false; // search bar
   final NoteController noteController = Get.put(NoteController());
   final TextEditingController searchControl = TextEditingController();
+  final FocusNode searchFocus = FocusNode();
+  List<Note> searchList = [];
 
+  // Add the following methods to the _HomePage class:
   void add() {
     Get.to(
-      () => const NotePage(),
+      () => const NotePage(
+        title: '',
+        content: '',
+        dateTime: '',
+        color: Colors.white,
+        option: 0,
+        read: false,
+      ),
       transition: Transition.rightToLeft,
       duration: const Duration(milliseconds: 500),
     );
-  }
+  } // add note
 
   void view() {
     setState(() {
-      grid_view = !grid_view;
+      gridView = !gridView;
     });
-  }
+  } // change view (grid or list)
 
   void searchNote() {
     setState(() {
       search = !search;
       searchControl.clear();
       searchList = noteController.notes;
+      if (search) {
+        searchFocus.requestFocus();
+      } else {
+        searchFocus.unfocus();
+      } // Reset search list
     });
-  }
-
-  List<Note> searchList = [];
+  } // search note (by title)
 
   void runFilter(String enteredKeyword) {
     searchList = noteController.notes;
@@ -54,7 +68,29 @@ class _HomePage extends State<HomePage> {
     setState(() {
       searchList = searchList;
     });
-  }
+  } // search note function (filter)
+
+  void delete(int index) {
+    setState(() {
+      noteController.deleteNote(index);
+    });
+  } // delete note when swipe
+
+  void whenTap(int index) {
+    var note = searchList[index];
+    Get.to(
+      () => NotePage(
+        title: note.title,
+        content: note.content,
+        dateTime: note.date,
+        color: note.color,
+        option: 1,
+        read: true,
+      ),
+      transition: Transition.rightToLeft, // animation
+      duration: const Duration(milliseconds: 500),
+    );
+  } // edit note when tap on it
 
   @override
   initState() {
@@ -71,6 +107,7 @@ class _HomePage extends State<HomePage> {
             ? TextFormField(
                 onChanged: (value) => runFilter(value),
                 controller: searchControl,
+                focusNode: searchFocus,
                 decoration: const InputDecoration(
                   hintText: 'Search..',
                   hintStyle: TextStyle(
@@ -126,24 +163,31 @@ class _HomePage extends State<HomePage> {
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               IconButton(
-                  color: grid_view ? Colors.grey : Colors.black,
+                  color: gridView ? Colors.grey : Colors.black,
                   onPressed: view,
                   icon: const Icon(Icons.grid_view_outlined)),
               IconButton(
-                  color: grid_view ? Colors.black : Colors.grey,
+                  color: gridView ? Colors.black : Colors.grey,
                   onPressed: view,
                   icon: const Icon(Icons.list_alt_rounded)),
               const SizedBox(width: 15),
             ],
           ),
           const SizedBox(height: 20),
+
+          // Display notes in grid or list view
+          /* - Check notes list empty
+             - Edit notes
+             - Delete notes
+             - Animation for edit notes
+           */
           Expanded(child: Obx(() {
             return searchList.isEmpty
                 ? const Text(
                     'Empty',
                     textAlign: TextAlign.center,
                   )
-                : grid_view
+                : gridView
                     ? GridView.builder(
                         padding: const EdgeInsets.only(left: 13, right: 13),
                         itemCount: searchList.length,
@@ -155,110 +199,116 @@ class _HomePage extends State<HomePage> {
                         ),
                         itemBuilder: (context, index) {
                           var note = searchList[index];
-                          return Card(
-                            color: note.color,
-                            child: Column(
-                              children: [
-                                ListTile(
-                                  title: Text(
-                                    note.title,
-                                    overflow: TextOverflow.ellipsis,
-                                    maxLines: 2,
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.black,
-                                    ),
-                                  ),
-                                  subtitle: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        note.date,
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: note.color.computeLuminance() <
-                                                  0.5
-                                              ? Colors.white
-                                              : Colors.grey,
-                                        ),
-                                      ),
-                                      const SizedBox(
-                                          height:
-                                              4), // Optional: Add some space between date and content
-                                      Text(
-                                        note.content,
+                          return Dismissible(
+                              key: UniqueKey(),
+                              onDismissed: (direction) {
+                                delete(index);
+                              },
+                              child: Card(
+                                color: note.color,
+                                child: Column(
+                                  children: [
+                                    ListTile(
+                                      title: Text(
+                                        note.title,
                                         overflow: TextOverflow.ellipsis,
-                                        maxLines: 5,
+                                        maxLines: 1,
                                         style: const TextStyle(
-                                          fontSize: 12,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
                                           color: Colors.black,
                                         ),
                                       ),
-                                    ],
-                                  ),
+                                      subtitle: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            note.date,
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: note.color
+                                                          .computeLuminance() <
+                                                      0.5
+                                                  ? Colors.white
+                                                  : Colors.grey,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            note.content,
+                                            overflow: TextOverflow.ellipsis,
+                                            maxLines: 5,
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.black,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      onTap: () => whenTap(index),
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            ),
-                          );
+                              ));
                         })
                     : ListView.builder(
                         itemCount: searchList.length,
                         itemBuilder: (context, index) {
                           var note = searchList[index];
-                          return Container(
-                              margin: const EdgeInsets.only(
-                                  bottom: 10, left: 15, right: 15),
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: note.color,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: ListTile(
-                                title: Text(
-                                  note.title,
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 1,
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black,
+                          return Dismissible(
+                              key: UniqueKey(),
+                              onDismissed: (direction) {
+                                delete(index);
+                              },
+                              child: Container(
+                                  margin: const EdgeInsets.only(
+                                      bottom: 10, left: 15, right: 15),
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: note.color,
+                                    borderRadius: BorderRadius.circular(10),
                                   ),
-                                ),
-                                subtitle: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      note.date,
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color:
-                                            note.color.computeLuminance() < 0.5
-                                                ? Colors.white
-                                                : Colors.grey,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      note.content,
+                                  child: ListTile(
+                                    title: Text(
+                                      note.title,
                                       overflow: TextOverflow.ellipsis,
                                       maxLines: 1,
                                       style: const TextStyle(
-                                        fontSize: 12,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
                                         color: Colors.black,
                                       ),
                                     ),
-                                  ],
-                                ),
-                                // onTap: () {
-                                //   Get.to(
-                                //     () => NotePage(note: note),
-                                //     transition: Transition.rightToLeft,
-                                //     duration: const Duration(milliseconds: 500),
-                                //   );
-                                // },
-                              ));
+                                    subtitle: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          note.date,
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color:
+                                                note.color.computeLuminance() <
+                                                        0.5
+                                                    ? Colors.white
+                                                    : Colors.grey,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          note.content,
+                                          overflow: TextOverflow.ellipsis,
+                                          maxLines: 1,
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.black,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    onTap: () => whenTap(index),
+                                  )));
                         },
                       );
           })),

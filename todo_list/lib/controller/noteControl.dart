@@ -10,6 +10,18 @@ class NoteController extends GetxController {
   }
 
   void deleteNote(int index) {
-    notes.removeAt(index);
+    notes.removeWhere((note) => note == notes[index]);
+  }
+
+  void editNote(
+      int index, String title, String content, String date, Color color) {
+    notes[index] =
+        Note(title: title, content: content, date: date, color: color);
+  }
+
+  void saveEdit(
+      int index, String title, String content, String date, Color color) {
+    notes[index] =
+        Note(title: title, content: content, date: date, color: color);
   }
 }
