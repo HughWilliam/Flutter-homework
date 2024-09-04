@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:get/route_manager.dart';
+import 'package:get/get.dart';
+import 'package:todo_list/controller/noteControl.dart';
+import 'package:todo_list/controller/pageControl.dart';
 import 'package:todo_list/page/splashScreen.dart';
 
 void main() {
+  Get.put(NoteController());
+  Get.put(HomePageController());
   runApp(const MyApp());
 }
 
